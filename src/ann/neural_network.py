@@ -49,8 +49,8 @@ class NeuralNetwork:
         weight_decay = getattr(cli_args, 'weight_decay', 0.0)
         loss_name = getattr(cli_args, 'loss', 'cross_entropy')
 
-        input_size = 784  # MNIST / Fashion-MNIST
-        output_size = 10
+        input_size = getattr(cli_args, 'input_size', 784)
+        output_size = getattr(cli_args, 'output_size', 10)
 
         # Normalize hidden_size to a list of per-layer sizes
         if isinstance(hidden_size, int):
@@ -126,7 +126,14 @@ class NeuralNetwork:
             grad = self.activations[i].backward(grad)
             # Backprop through dense layer (sets layer.grad_W, layer.grad_b)
             grad = self.layers[i].backward(grad)
-            grad_W_list.append(self.layers[i].grad_W)
+            
+            # Incorporate weight decay into analytical gradient if present
+            # Gradient of L2 term 0.5 * lambda * W^2 is lambda * W
+            wd_term = 0.0
+            if hasattr(self, 'optimizer') and self.optimizer.weight_decay > 0:
+                wd_term = self.optimizer.weight_decay * self.layers[i].W
+            
+            grad_W_list.append(self.layers[i].grad_W + wd_term)
             grad_b_list.append(self.layers[i].grad_b)
 
         # create explicit object arrays to avoid numpy trying to broadcast shapes

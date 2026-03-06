@@ -23,7 +23,8 @@ class SGD(Optimizer):
 
     def step(self):
         for layer in self.layers:
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
             layer.W -= self.lr * grad_W
             layer.b -= self.lr * grad_b
@@ -41,7 +42,8 @@ class Momentum(Optimizer):
 
     def step(self):
         for i, layer in enumerate(self.layers):
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
 
             self.v_W[i] = self.beta * self.v_W[i] + grad_W
@@ -55,14 +57,8 @@ class NAG(Optimizer):
     """Nesterov Accelerated Gradient.
 
     Implementation: Uses the look-ahead approach.
-    1. Temporarily jump ahead: W_lookahead = W - lr * beta * v
-    2. Compute gradient at look-ahead position (already done by forward/backward with shifted weights)
-    3. Update velocity and weights
-
-    For simplicity, we use the equivalent reformulation:
-        v = beta * v + grad
-        W = W - lr * (beta * v + grad)
-    which avoids needing to shift weights before forward pass.
+    v = beta * v + grad
+    W = W - lr * (beta * v + grad)
     """
 
     def __init__(self, layers, lr=0.001, weight_decay=0.0, beta=0.9):
@@ -73,7 +69,8 @@ class NAG(Optimizer):
 
     def step(self):
         for i, layer in enumerate(self.layers):
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
 
             self.v_W[i] = self.beta * self.v_W[i] + grad_W
@@ -96,7 +93,8 @@ class RMSprop(Optimizer):
 
     def step(self):
         for i, layer in enumerate(self.layers):
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
 
             self.s_W[i] = self.beta * self.s_W[i] + (1 - self.beta) * grad_W ** 2
@@ -125,7 +123,8 @@ class Adam(Optimizer):
     def step(self):
         self.t += 1
         for i, layer in enumerate(self.layers):
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
 
             # First moment (mean)
@@ -165,7 +164,8 @@ class Nadam(Optimizer):
     def step(self):
         self.t += 1
         for i, layer in enumerate(self.layers):
-            grad_W = layer.grad_W + self.weight_decay * layer.W
+            # Gradient already contains L2 term from backward()
+            grad_W = layer.grad_W
             grad_b = layer.grad_b
 
             # Update biased first moment

@@ -7,9 +7,9 @@ import numpy as np
 
 class CrossEntropyLoss:
     """
-    Cross-Entropy Loss combined with Softmax.
+    Cross-Entropy Loss.
     Forward: L = -mean(sum(y_true * log(y_pred + eps)))
-    Backward: dL/dz = (y_pred - y_true) / batch_size  (softmax + CE combined gradient)
+    Backward: dL/dy_pred = -y_true / (y_pred + eps) / batch_size
     """
 
     def forward(self, y_true, y_pred):
@@ -18,7 +18,7 @@ class CrossEntropyLoss:
 
         Args:
             y_true: one-hot encoded labels (batch_size, num_classes)
-            y_pred: softmax output probabilities (batch_size, num_classes)
+            y_pred: output probabilities (batch_size, num_classes)
 
         Returns:
             Scalar loss value
@@ -30,17 +30,18 @@ class CrossEntropyLoss:
 
     def backward(self, y_true, y_pred):
         """
-        Compute gradient of loss w.r.t. softmax input (combined gradient).
+        Compute gradient of loss w.r.t. y_pred (modular gradient).
 
         Args:
             y_true: one-hot encoded labels (batch_size, num_classes)
-            y_pred: softmax output probabilities (batch_size, num_classes)
+            y_pred: output probabilities (batch_size, num_classes)
 
         Returns:
             Gradient (batch_size, num_classes)
         """
         batch_size = y_true.shape[0]
-        return (y_pred - y_true) / batch_size
+        eps = 1e-12
+        return -y_true / (y_pred + eps) / batch_size
 
 
 class MSELoss:
@@ -66,29 +67,17 @@ class MSELoss:
 
     def backward(self, y_true, y_pred):
         """
-        Compute gradient of MSE loss.
-
-        For MSE with softmax output, we need to backprop through softmax too.
-        dL/dz = (y_pred - y_true) * y_pred * (1 - y_pred) doesn't work well.
-        Instead, use the full Jacobian: dL/dz_i = sum_j (dL/dy_j * dy_j/dz_i)
-        where dy_j/dz_i = y_i(delta_ij - y_j) for softmax.
+        Compute gradient of MSE loss w.r.t. y_pred.
 
         Args:
             y_true: one-hot encoded labels (batch_size, num_classes)
             y_pred: output probabilities (batch_size, num_classes)
 
         Returns:
-            Gradient w.r.t. softmax input (batch_size, num_classes)
+            Gradient dL/dy_pred (batch_size, num_classes)
         """
         batch_size = y_true.shape[0]
-        # dL/dy_pred = (y_pred - y_true) for MSE
-        dL_dy = y_pred - y_true  # (batch_size, num_classes)
-
-        # Backprop through softmax: dL/dz = y_pred * (dL/dy - sum(dL/dy * y_pred, axis=1, keepdims=True))
-        # This is the vectorized form of the softmax Jacobian application
-        sum_term = np.sum(dL_dy * y_pred, axis=1, keepdims=True)
-        grad = y_pred * (dL_dy - sum_term) / batch_size
-        return grad
+        return (y_pred - y_true) / batch_size
 
 
 def get_loss(name):

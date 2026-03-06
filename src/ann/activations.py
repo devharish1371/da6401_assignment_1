@@ -15,6 +15,7 @@ class Sigmoid:
         return self.output
 
     def backward(self, grad_output):
+        """dL/dz = dL/dy * y * (1 - y)"""
         return grad_output * self.output * (1.0 - self.output)
 
 
@@ -26,6 +27,7 @@ class Tanh:
         return self.output
 
     def backward(self, grad_output):
+        """dL/dz = dL/dy * (1 - y^2)"""
         return grad_output * (1.0 - self.output ** 2)
 
 
@@ -37,6 +39,7 @@ class ReLU:
         return np.maximum(0, x)
 
     def backward(self, grad_output):
+        """dL/dz = dL/dy * indicator(x > 0)"""
         return grad_output * (self.input > 0).astype(np.float64)
 
 
@@ -44,7 +47,6 @@ class Softmax:
     """
     Softmax activation: e^(x_i) / sum(e^(x_j))
     Numerically stable implementation using max subtraction.
-    Backward is identity — gradient is handled by combined softmax+CE loss.
     """
 
     def forward(self, x):
@@ -55,9 +57,19 @@ class Softmax:
         return self.output
 
     def backward(self, grad_output):
-        # When combined with cross-entropy, the gradient (y_pred - y_true)
-        # is computed in the loss function, so just pass through.
-        return grad_output
+        """
+        Compute Jacobian product for Softmax.
+        dL/dz_i = p_i * (dL/dy_i - sum_j(dL/dy_j * p_j))
+        
+        This allows Softmax to be used with any loss function.
+        - For CrossEntropy: dL/dy = -y/p. Result: p - y.
+        - For MSE: dL/dy = p - y. Result: p*(p-y - sum(p*(p-y))).
+        """
+        # grad_output is dL/dy (batch_size, num_classes)
+        # self.output is p (batch_size, num_classes)
+        
+        sum_term = np.sum(grad_output * self.output, axis=1, keepdims=True)
+        return self.output * (grad_output - sum_term)
 
 
 def get_activation(name):

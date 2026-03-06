@@ -12,6 +12,6 @@
   "weight_decay": 0.0,
   "batch_size": 1000,
   "epochs": 1,
-  "test_loss": 0.4538850065442928,
-  "test_accuracy": 0.8857
+  "test_loss": 0.4484136711420619,
+  "test_accuracy": 0.8855
 }
