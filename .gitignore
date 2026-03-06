@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# W&B
+wandb/
+
+# Local model storage (usually too large for git, but these might be small)
+# models/*.npy
+
+# OS
+.DS_Store
