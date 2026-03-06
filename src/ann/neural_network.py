@@ -113,9 +113,12 @@ class NeuralNetwork:
         - `grad_Ws[0]` is gradient for the last (output) layer weights,
           `grad_bs[0]` is gradient for the last layer biases, and so on.
         """
-        # Compute loss gradient (includes softmax backprop for CE, or
-        # softmax Jacobian for MSE)
+        # Compute loss gradient (dL/dy_pred)
         grad = self.loss_fn.backward(y_true, y_pred)
+
+        # Populate state for the last activation (usually Softmax) because
+        # forward() returns logits and skips the last activation's forward call.
+        self.activations[-1].output = y_pred
 
         grad_W_list = []
         grad_b_list = []
